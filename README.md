@@ -22,4 +22,4 @@ A high-performance, mobile-first web application built specifically for universi
 
 ---
 **Developed with ❤️ for the Student Community.**
-&copy; 2026 | Created by [aman/robel1229]
+&copy; 2026 | Created by [aman/robel1229](https://github.com/robel1229/)]
