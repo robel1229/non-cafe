@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Meal Tracker - E.C Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-orange: #e67e22;
+            --secondary-green: #27ae60;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --modal-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h2 { color: var(--primary-orange); text-align: center; margin-top: 0; }
+        
+        .member-setup { background: #fff3e0; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--primary-orange); }
+        .member-list-input { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+
+        .student-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 20px 0; }
+        .student-card { background: #f9f9f9; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
+        .cost-val { font-weight: bold; color: var(--secondary-green); font-size: 18px; }
+
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-add { background: var(--primary-orange); color: white; width: 80px; margin: 0; }
+        .btn-save { background: var(--secondary-green); color: white; font-size: 18px; }
+        .btn-export { background: #3498db; color: white; }
+        .btn-clear { background: #e74c3c; color: white; margin-top: 20px; padding: 8px 15px; width: auto; }
+        
+        .history-section { width: 100%; max-width: 600px; margin-top: 30px; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--primary-orange); color: white; padding: 10px; font-size: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; text-align: center; }
+
+        .summary-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid var(--secondary-green); }
+        .summary-item { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
+
+        /* MODERN NOTIFICATION CSS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 380px; padding: 25px;
+            border-radius: 20px; box-shadow: var(--modal-shadow); text-align: center;
+            transform: scale(0.8); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .modal-head { font-weight: 800; font-size: 1.1rem; color: var(--primary-orange); margin-bottom: 10px; }
+        .modal-body { color: #555; line-height: 1.5; margin-bottom: 20px; font-size: 15px; }
+        .modal-footer { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .m-confirm { background: var(--primary-orange); color: white; }
+        .m-cancel { background: #f1f1f1; color: #777; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { to { transform: scale(1); } }
+
+        footer { margin-top: 40px; padding: 20px; text-align: center; font-size: 14px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Non-Cafe System <br> Ethiopian university Students</h2>
+
+        <div class="member-setup">
+            <label>Add Group Members:</label>
+            <div class="member-list-input">
+                <input type="text" id="newMemberName" placeholder="Enter name">
+                <button class="btn btn-add" onclick="addMember()">Add</button>
+            </div>
+            <div id="memberBadges"></div>
+        </div>
+
+        <div class="input-group">
+            <label>Location</label>
+            <input type="text" id="location" placeholder="e.g. Wude, Amazon">
+        </div>
+
+        <div class="input-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Meal Type</label>
+                <select id="mealType">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Launch">Launch</option>
+                    <option value="Dinner">Dinner</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>Total Price (ETB)</label>
+                <input type="number" id="totalPrice" placeholder="0.00" oninput="calculate()">
+            </div>
+        </div>
+
+        <div class="student-grid" id="studentGrid"></div>
+        <button class="btn btn-save" onclick="saveToHistory()">Save Daily Record</button>
+    </div>
+
+    <div class="history-section">
+        <button class="btn btn-export" onclick="exportToExcel()">📥 Export History as Excel File</button>
+        
+        <h3>Saved History</h3>
+        <div class="table-wrapper">
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Date (E.C)</th>
+                        <th>Loc</th>
+                        <th>Meal</th>
+                        <th>Total</th>
+                        <th>Split Details</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="summary-box" id="summaryBox">
+            <h4 style="margin-top:0;">Monthly Summary (Total to Pay)</h4>
+            <div id="summaryContent"></div>
+        </div>
+        
+        <button class="btn btn-clear" onclick="clearAllData()">Clear All Data</button>
+    </div>
+
+    <div id="modernModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalHead" class="modal-head">Notification</div>
+            <div id="modalBody" class="modal-body">Message text here...</div>
+            <div id="modalFooter" class="modal-footer">
+                <button id="modalCancel" class="m-btn m-cancel" onclick="closeModal()">Cancel</button>
+                <button id="modalConfirm" class="m-btn m-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 Non-Cafe System. Created by Aman. <br>
+        Built for students. Available on GitHub.
+    </footer>
+
+    <script>
+        let members = JSON.parse(localStorage.getItem('cafeMembers')) || [];
+        let history = JSON.parse(localStorage.getItem('cafeHistory')) || [];
+        let autoCloseTimer;
+
+        // MODAL LOGIC
+        function showNotification(title, msg, onConfirm = null, isConfirmType = false) {
+            const modal = document.getElementById('modernModal');
+            const confirmBtn = document.getElementById('modalConfirm');
+            const cancelBtn = document.getElementById('modalCancel');
+            
+            document.getElementById('modalHead').innerText = title;
+            document.getElementById('modalBody').innerText = msg;
+            
+            modal.style.display = 'flex';
+            cancelBtn.style.display = isConfirmType ? 'block' : 'none';
+
+            confirmBtn.onclick = () => { closeModal(); if(onConfirm) onConfirm(); };
+
+            // Auto-close after 5 seconds if it's just an alert (not a confirm)
+            clearTimeout(autoCloseTimer);
+            if(!isConfirmType) {
+                autoCloseTimer = setTimeout(closeModal, 5000);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modernModal').style.display = 'none';
+        }
+
+        function getEthiopianDate() {
+            const now = new Date();
+            const ethiopianTimestamp = now.getTime() - (2809 * 24 * 60 * 60 * 1000); 
+            const ecDate = new Date(ethiopianTimestamp);
+            return `${String(ecDate.getDate()).padStart(2,'0')}/${String(ecDate.getMonth()+1).padStart(2,'0')}/${ecDate.getFullYear()} E.C`;
+        }
+
+        function init() { renderMembers(); renderHistory(); }
+
+        function addMember() {
+            const name = document.getElementById('newMemberName').value.trim();
+            if (name && !members.includes(name)) {
+                members.push(name);
+                localStorage.setItem('cafeMembers', JSON.stringify(members));
+                document.getElementById('newMemberName').value = '';
+                renderMembers();
+            }
+        }
+
+        function renderMembers() {
+            const grid = document.getElementById('studentGrid');
+            const badges = document.getElementById('memberBadges');
+            grid.innerHTML = ''; badges.innerHTML = '';
+            members.forEach(name => {
+                const badge = document.createElement('span');
+                badge.style = "display:inline-block; background:#ddd; padding:4px 8px; border-radius:12px; margin:2px; font-size:11px;";
+                badge.innerText = name;
+                badges.appendChild(badge);
+
+                const card = document.createElement('div');
+                card.className = 'student-card';
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                        <input type="checkbox" checked class="member-check" data-name="${name}" onchange="calculate()">
+                        <label style="margin:0; font-size:12px;">${name}</label>
+                    </div>
+                    <div class="cost-val" id="cost-${name}">0.00</div>
+                `;
+                grid.appendChild(card);
+            });
+            calculate();
+        }
+
+        function calculate() {
+            const total = parseFloat(document.getElementById('totalPrice').value) || 0;
+            const checks = document.querySelectorAll('.member-check');
+            let activeCount = 0;
+            checks.forEach(c => { if(c.checked) activeCount++; });
+            const perPerson = activeCount > 0 ? (total / activeCount).toFixed(2) : 0;
+            checks.forEach(c => {
+                const name = c.getAttribute('data-name');
+                document.getElementById(`cost-${name}`).innerText = c.checked ? perPerson : "0.00";
+            });
+        }
+
+        function saveToHistory() {
+            const loc = document.getElementById('location').value;
+            const price = parseFloat(document.getElementById('totalPrice').value);
+            
+            if(!loc || !price) {
+                showNotification("Missing Info", "Please provide a location and a total price.");
+                return;
+            }
+
+            const meal = document.getElementById('mealType').value;
+            const checks = document.querySelectorAll('.member-check');
+            const active = Array.from(checks).filter(c => c.checked);
+            
+            if(active.length === 0) {
+                showNotification("Wait!", "At least one member must be selected.");
+                return;
+            }
+
+            const perPerson = (price / active.length).toFixed(2);
+            let splitText = [];
+            let detailData = {};
+            active.forEach(c => {
+                const name = c.getAttribute('data-name');
+                splitText.push(`${name}(${perPerson})`);
+                detailData[name] = parseFloat(perPerson);
+            });
+
+            history.unshift({
+                date: getEthiopianDate(),
+                location: loc,
+                meal: meal,
+                total: price,
+                details: splitText.join(', '),
+                individualCosts: detailData
+            });
+
+            localStorage.setItem('cafeHistory', JSON.stringify(history));
+            renderHistory();
+            document.getElementById('location').value = '';
+            document.getElementById('totalPrice').value = '';
+            showNotification("Success!", "Record saved. (Closes in 5s)");
+        }
+
+        function renderHistory() {
+            const tbody = document.querySelector('#historyTable tbody');
+            tbody.innerHTML = '';
+            let totals = {};
+            members.forEach(m => totals[m] = 0);
+
+            history.forEach(item => {
+                tbody.innerHTML += `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.location}</td>
+                    <td>${item.meal}</td>
+                    <td>${item.total}</td>
+                    <td style="color:#2980b9;">${item.details}</td>
+                </tr>`;
+                for (let name in item.individualCosts) {
+                    if (totals.hasOwnProperty(name)) totals[name] += item.individualCosts[name];
+                }
+            });
+
+            const sumContent = document.getElementById('summaryContent');
+            sumContent.innerHTML = '';
+            for (let name in totals) {
+                sumContent.innerHTML += `<div class="summary-item"><span>${name}:</span> <span>${totals[name].toFixed(2)} ETB</span></div>`;
+            }
+        }
+
+        function exportToExcel() {
+            if(history.length === 0) {
+                showNotification("Export Failed", "No history available to export yet.");
+                return;
+            }
+            const worksheet = XLSX.utils.json_to_sheet(history.map(item => ({
+                Date: item.date, Location: item.location, Meal: item.meal, Total: item.total, Splits: item.details
+            })));
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
+            XLSX.writeFile(workbook, "Non_Cafe_History.xlsx");
+        }
+
+        function clearAllData() {
+            showNotification("Delete Data?", "Are you sure you want to clear all history and members?", () => {
+                localStorage.clear();
+                location.reload();
+            }, true);
+        }
+
+        init();
+    </script>
+</body>
+</html>
