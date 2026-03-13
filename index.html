@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html5>
 <html lang="en">
 <head>
     <meta name="google-site-verification" content="Q3LnD16bcmpmIpjaOD6c4TFTx2gGMjw0h7EoS-69vN8" />
@@ -84,6 +84,16 @@
         .btn-delete-row { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; }
 
         footer { margin-top: 40px; padding: 20px; text-align: center; font-size: 14px; color: #7f8c8d; }
+
+        /* APK Specific styles */
+        #apkDownloadLink {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-orange);
+            text-align: center;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -135,7 +145,16 @@
     </div>
 
     <div class="history-section">
-        <button class="btn btn-export" onclick="exportToExcel()">&#128229; Export History as Excel File</button>
+        <button id="browserExportBtn" class="btn btn-export" onclick="exportToExcel()" style="display:none;">
+            &#128229; Export History as Excel File
+        </button>
+        
+        <div id="apkDownloadLink" style="display:none;">
+            <p style="margin:0 0 10px 0; color: var(--text-color); font-size: 14px;">Excel download is limited inside the App.</p>
+            <a id="chromeLink" href="#" target="_blank" style="color: #2196f3; font-weight: bold; text-decoration: underline;">
+                Click here to open in Chrome to Download Excel
+            </a>
+        </div>
         
         <h3>Saved History</h3>
         <div class="table-wrapper">
@@ -205,6 +224,25 @@
     let history = [];
     let rawHistoryKeys = [];
 
+    // PLATFORM DETECTION - Redirect to your specific URL
+    function initPlatform() {
+        const isAPK = navigator.userAgent.toLowerCase().includes("wv") || window.location.protocol === "file:";
+        const browserBtn = document.getElementById('browserExportBtn');
+        const apkLinkDiv = document.getElementById('apkDownloadLink');
+        const chromeLink = document.getElementById('chromeLink');
+
+        // FORCE YOUR GITHUB URL
+        chromeLink.href = "https://robel1229.github.io/non-cafe/?group=" + groupID;
+
+        if (isAPK) {
+            browserBtn.style.display = 'none';
+            apkLinkDiv.style.display = 'block';
+        } else {
+            browserBtn.style.display = 'block';
+            apkLinkDiv.style.display = 'none';
+        }
+    }
+
     function setSmartMealDefault() {
         const hour = new Date().getHours(); 
         const mealSelect = document.getElementById('mealType');
@@ -217,7 +255,11 @@
             mealSelect.value = "Dinner";
         }
     }
-    setSmartMealDefault();
+
+    window.onload = function() {
+        initPlatform();
+        setSmartMealDefault();
+    };
 
     function showNotification({ title, msg, onConfirm = null, isConfirmType = false, isPassword = false }) {
         const modal = document.getElementById('modernModal');
@@ -335,7 +377,6 @@
         calculate();
     }
 
-    // FIX: Rounds UP to 2 decimal places (e.g. 90.333 -> 90.34)
     function roundUp(num) {
         return Math.ceil(num * 100) / 100;
     }
@@ -360,7 +401,7 @@
         const loc = document.getElementById('location').value;
         const price = parseFloat(document.getElementById('totalPrice').value);
         const checks = document.querySelectorAll('.member-check');
-        const active = Array.from(checks).filter(c => c.checked);
+        const active = Array.from(checks).filter(c => { return c.checked; });
         
         if(!loc || !price || active.length === 0) {
             showNotification({ title: "Error", msg: "Check location, price, and selected members." });
@@ -493,54 +534,28 @@
     }
 
     function exportToExcel() {
-    try {
-        const excelData = history.map(item => {
-            const base = {
-                date: item.date,
-                location: item.location,
-                meal: item.meal,
-                total: item.total
-            };
-            return Object.assign(base, item.individualCosts);
-        });
+        try {
+            const excelData = history.map(item => {
+                const base = {
+                    date: item.date,
+                    location: item.location,
+                    meal: item.meal,
+                    total: item.total
+                };
+                return Object.assign(base, item.individualCosts);
+            });
 
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
 
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary' });
-
-        function s2ab(s) {
-            const buf = new ArrayBuffer(s.length);
-            const view = new Uint8Array(buf);
-            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-            return buf;
+            XLSX.writeFile(workbook, "Meal_History_" + groupID + ".xlsx");
+            
+            showNotification({ title: "Export Success", msg: "File downloaded to your device." });
+        } catch (e) {
+            alert("Export failed: " + e.message);
         }
-
-        const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
-        const fileName = "Meal_History_" + groupID + ".xlsx";
-
-        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(blob, fileName);
-        } else {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            document.body.appendChild(a);
-            a.style = "display: none";
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }, 100);
-        }
-        
-        showNotification({ title: "Export Success", msg: "Check your phone's 'Downloads' folder." });
-    } catch (e) {
-        alert("Download failed: " + e.message);
     }
-}
 
     function clearAllData() {
         groupRef.child('password').once('value', (snapshot) => {
