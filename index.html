@@ -47,9 +47,43 @@
         .btn-qr { background: #2c3e50; color: white; margin-top: 15px; }
         .btn-export { background: #3498db; color: white; }
         .btn-clear { background: #e74c3c; color: white; margin-top: 20px; padding: 8px 15px; width: auto; }
-        
-        .history-section { width: 100%; max-width: 600px; margin-top: 30px; }
-        .table-wrapper { overflow-x: auto; background: white; border-radius: 10px; }
+        /* 1. Reset history section (removes scroll from the whole area) */
+.history-section { 
+    width: 100%; 
+    max-width: 600px; 
+    margin-top: 30px; 
+}
+
+/* 2. Apply scroll ONLY to the table container */
+.table-wrapper { 
+    overflow-x: auto; 
+    background: white; 
+    border-radius: 10px; 
+    max-height: 400px; /* Limits the table height */
+    overflow-y: auto;  /* Adds vertical scroll to the table */
+    border: 1px solid #eee;
+}
+
+/* 3. Make the table header stay at the top while scrolling */
+th { 
+    background: var(--primary-orange); 
+    color: white; 
+    padding: 10px; 
+    font-size: 12px; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+}
+
+/* 4. Optional: Styled scrollbar for the table */
+.table-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--primary-orange);
+    border-radius: 10px;
+}
+
         table { width: 100%; border-collapse: collapse; }
         th { background: var(--primary-orange); color: white; padding: 10px; font-size: 12px; }
         td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; text-align: center; }
