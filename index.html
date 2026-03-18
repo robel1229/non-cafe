@@ -51,9 +51,7 @@
         .btn-pdf { background: #e74c3c; color: white; margin-top: 10px; }
         .btn-clear { background: #e74c3c; color: white; margin-top: 20px; padding: 8px 15px; width: auto; }
         
-        /* New utility class to hide elements */
-        .hidden { display: none !important; }
-
+        /* Updated: Table-only scroll styles */
         .history-section { width: 100%; max-width: 600px; margin-top: 30px; }
         .table-wrapper { 
             overflow-x: auto; 
@@ -165,11 +163,11 @@
     </div>
 
     <div class="history-section">
-        <button id="excelBtn" class="btn btn-export" onclick="exportToExcel()">
+        <button id="browserExportBtn" class="btn btn-export" onclick="exportToExcel()" style="display:none;">
             &#128229; Export History (Excel)
         </button>
         
-        <button id="pdfBtn" class="btn btn-pdf" onclick="exportToPDF()">
+        <button class="btn btn-pdf" onclick="exportToPDF()">
             &#128196; Download PDF Report
         </button>
         
@@ -248,25 +246,19 @@
     let history = [];
     let rawHistoryKeys = [];
 
-    // Updated initPlatform with Hide/Show logic
     function initPlatform() {
         const isAPK = navigator.userAgent.toLowerCase().includes("wv") || window.location.protocol === "file:";
-        const excelBtn = document.getElementById('excelBtn');
-        const pdfBtn = document.getElementById('pdfBtn');
+        const browserBtn = document.getElementById('browserExportBtn');
         const apkLinkDiv = document.getElementById('apkDownloadLink');
         const chromeLink = document.getElementById('chromeLink');
 
         chromeLink.href = "https://robel1229.github.io/non-cafe/?group=" + groupID;
 
         if (isAPK) {
-            // Inside APK: Show PDF, Hide Excel
-            excelBtn.classList.add('hidden');
-            pdfBtn.classList.remove('hidden');
+            browserBtn.style.display = 'none';
             apkLinkDiv.style.display = 'block';
         } else {
-            // Standard Browser: Show Excel, Hide PDF
-            excelBtn.classList.remove('hidden');
-            pdfBtn.classList.add('hidden');
+            browserBtn.style.display = 'block';
             apkLinkDiv.style.display = 'none';
         }
     }
@@ -274,9 +266,14 @@
     function setSmartMealDefault() {
         const hour = new Date().getHours(); 
         const mealSelect = document.getElementById('mealType');
-        if (hour >= 7 && hour < 12) mealSelect.value = "Breakfast";
-        else if (hour >= 12 && hour < 18) mealSelect.value = "Lunch";
-        else mealSelect.value = "Dinner";
+
+        if (hour >= 7 && hour < 12) {
+            mealSelect.value = "Breakfast";
+        } else if (hour >= 12 && hour < 18) {
+            mealSelect.value = "Lunch";
+        } else {
+            mealSelect.value = "Dinner";
+        }
     }
 
     window.onload = function() {
@@ -289,12 +286,15 @@
         const confirmBtn = document.getElementById('modalConfirm');
         const cancelBtn = document.getElementById('modalCancel');
         const inputArea = document.getElementById('modalInputArea');
+        
         document.getElementById('qrcode').innerHTML = ""; 
         document.getElementById('modalHead').innerText = title;
         document.getElementById('modalBody').innerText = msg;
         inputArea.innerHTML = isPassword ? '<input type="password" id="modalPassInput" class="modal-input-field" placeholder="Enter password...">' : '';
+        
         modal.style.display = 'flex';
         cancelBtn.style.display = (isConfirmType || isPassword) ? 'block' : 'none';
+
         confirmBtn.onclick = () => {
             let passVal = isPassword ? document.getElementById('modalPassInput').value : null;
             closeModal();
@@ -307,19 +307,28 @@
     function switchGroup() {
         const newGroupName = document.getElementById('groupInput').value.trim();
         if (!newGroupName) return;
+
         db.ref('groups/' + newGroupName + '/password').once('value', (snapshot) => {
             const existingPass = snapshot.val();
+            
             if (existingPass) {
                 showNotification({
-                    title: "Enter Password", msg: "Private group. Enter password:", isPassword: true,
+                    title: "Enter Password",
+                    msg: "This is a private group. Please enter the password to join:",
+                    isPassword: true,
                     onConfirm: (passInput) => {
-                        if (passInput === existingPass) window.location.href = window.location.pathname + '?group=' + newGroupName;
-                        else showNotification({ title: "Access Denied", msg: "Incorrect Password!" });
+                        if (passInput === existingPass) {
+                            window.location.href = window.location.pathname + '?group=' + newGroupName;
+                        } else {
+                            showNotification({ title: "Access Denied", msg: "Incorrect Password!" });
+                        }
                     }
                 });
             } else {
                 showNotification({
-                    title: "New Group", msg: "Set a password:", isPassword: true,
+                    title: "New Group Detected",
+                    msg: "Set a password for this new group:",
+                    isPassword: true,
                     onConfirm: (newPass) => {
                         if (newPass) {
                             db.ref('groups/' + newGroupName).set({ password: newPass });
@@ -338,7 +347,9 @@
             const historyObj = data.history || {};
             rawHistoryKeys = Object.keys(historyObj).reverse();
             history = rawHistoryKeys.map(k => historyObj[k]);
-            renderMembers(); renderHistory();
+            
+            renderMembers();
+            renderHistory();
         } else {
             members = []; history = []; rawHistoryKeys = [];
             renderMembers(); renderHistory();
@@ -347,7 +358,10 @@
 
     function showShareQR() {
         showNotification({ title: "Share Group", msg: "Scan to join '" + groupID + "'." });
-        new QRCode(document.getElementById('qrcode'), { text: window.location.href, width: 180, height: 180 });
+        new QRCode(document.getElementById('qrcode'), {
+            text: window.location.href,
+            width: 180, height: 180
+        });
     }
 
     function getEthiopianDate() {
@@ -383,15 +397,19 @@
         calculate();
     }
 
-    function roundUp(num) { return Math.ceil(num * 100) / 100; }
+    function roundUp(num) {
+        return Math.ceil(num * 100) / 100;
+    }
 
     function calculate() {
         const total = parseFloat(document.getElementById('totalPrice').value) || 0;
         const checks = document.querySelectorAll('.member-check');
         let activeCount = 0;
         checks.forEach(c => { if(c.checked) activeCount++; });
+        
         const perPerson = activeCount > 0 ? (total / activeCount) : 0;
         const roundedPerPerson = roundUp(perPerson);
+        
         checks.forEach(c => {
             const name = c.getAttribute('data-name');
             const costEl = document.getElementById(`cost-${name}`);
@@ -403,98 +421,248 @@
         const loc = document.getElementById('location').value;
         const price = parseFloat(document.getElementById('totalPrice').value);
         const checks = document.querySelectorAll('.member-check');
-        const active = Array.from(checks).filter(c => c.checked);
-        if(!loc || !price || active.length === 0) return showNotification({ title: "Error", msg: "Missing info." });
+        const active = Array.from(checks).filter(c => { return c.checked; });
+        
+        if(!loc || !price || active.length === 0) {
+            showNotification({ title: "Error", msg: "Check location, price, and selected members." });
+            return;
+        }
+
         const perPerson = roundUp(price / active.length);
-        let detailText = []; let detailData = {};
+        let detailText = [];
+        let detailData = {};
+        
         active.forEach(c => {
             const name = c.getAttribute('data-name');
             detailText.push(`${name}(${perPerson.toFixed(2)})`);
             detailData[name] = perPerson;
         });
-        groupRef.child('history').push({
-            date: getEthiopianDate(), location: loc, meal: document.getElementById('mealType').value,
-            total: price, details: detailText.join(', '), individualCosts: detailData
-        });
+
+        const record = {
+            date: getEthiopianDate(),
+            location: loc,
+            meal: document.getElementById('mealType').value,
+            total: price,
+            details: detailText.join(', '),
+            individualCosts: detailData
+        };
+
+        groupRef.child('history').push(record);
+        document.getElementById('location').value = '';
         document.getElementById('totalPrice').value = '';
-        calculate(); setSmartMealDefault();
+        
+        calculate(); 
+        setSmartMealDefault();
+        showNotification({ title: "Success", msg: "Record saved to " + groupID });
     }
 
     function renderHistory() {
         const tbody = document.querySelector('#historyTable tbody');
         tbody.innerHTML = '';
-        let locationGroups = {}; let studentGrandTotals = {}; let absoluteTotal = 0;
+        
+        let locationGroups = {}; 
+        let studentGrandTotals = {}; 
+        let absoluteTotal = 0;
+
         members.forEach(m => studentGrandTotals[m] = 0);
+
         history.forEach((item, index) => {
             const rowKey = rawHistoryKeys[index];
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${item.date}</td><td>${item.location}</td><td>${item.meal}</td><td>${item.total.toFixed(2)}</td><td style="color:#2980b9;">${item.details}</td><td><button class="btn-delete-row" onclick="deleteSingleEntry('${rowKey}')">&#128465;</button></td>`;
+            row.innerHTML = `
+                <td>${item.date}</td>
+                <td>${item.location}</td>
+                <td>${item.meal}</td>
+                <td>${item.total.toFixed(2)}</td>
+                <td style="color:#2980b9;">${item.details}</td>
+                <td><button class="btn-delete-row" onclick="deleteSingleEntry('${rowKey}')">&#128465;</button></td>
+            `;
             tbody.appendChild(row);
-            absoluteTotal += item.total;
+            
+            absoluteTotal += (item.total || 0);
+
             const locKey = item.location.trim() || "Unknown";
             if(!locationGroups[locKey]) locationGroups[locKey] = { students: {}, locTotal: 0 };
+
             for (let name in item.individualCosts) {
                 const cost = item.individualCosts[name];
                 locationGroups[locKey].students[name] = (locationGroups[locKey].students[name] || 0) + cost;
                 locationGroups[locKey].locTotal += cost;
-                if (studentGrandTotals.hasOwnProperty(name)) studentGrandTotals[name] += cost;
+                if (studentGrandTotals.hasOwnProperty(name)) {
+                    studentGrandTotals[name] += cost;
+                }
             }
         });
+
         const sumContent = document.getElementById('summaryContent');
         sumContent.innerHTML = '';
+
         sumContent.innerHTML += `<div style="font-weight:bold; color:var(--primary-orange); margin:10px 0 5px 0; font-size:14px;">&#128205; Breakdown by Location</div>`;
         for (let loc in locationGroups) {
-            let locHTML = `<div class="location-group"><div class="location-header"><span>${loc}</span></div>`;
+            let locHTML = `<div class="location-group">
+                <div class="location-header"><span>${loc}</span> <small>Details</small></div>`;
             for (let person in locationGroups[loc].students) {
-                locHTML += `<div class="summary-item" style="font-weight:normal; font-size:13px;"><span>${person}:</span> <span>${locationGroups[loc].students[person].toFixed(2)} ETB</span></div>`;
+                locHTML += `<div class="summary-item" style="font-weight:normal; font-size:13px;">
+                    <span>${person}:</span> <span>${locationGroups[loc].students[person].toFixed(2)} ETB</span>
+                </div>`;
             }
-            locHTML += `<div class="location-footer"><div class="summary-item"><span>Total:</span> <span>${locationGroups[loc].locTotal.toFixed(2)} ETB</span></div></div></div>`;
+            locHTML += `<div class="location-footer">
+                <div class="summary-item">
+                    <span>Total (this place):</span> <span>${locationGroups[loc].locTotal.toFixed(2)} ETB</span>
+                </div>
+            </div>`;
+            locHTML += `</div>`;
             sumContent.innerHTML += locHTML;
         }
-        sumContent.innerHTML += `<div style="font-weight:bold; color:#2196f3; margin:20px 0 5px 0; font-size:14px;">&#128179; Individual Totals</div>`;
+
+        sumContent.innerHTML += `<div style="font-weight:bold; color:#2196f3; margin:20px 0 5px 0; font-size:14px;">&#128179; Individual Totals (Grand Total to Pay)</div>`;
         let payBoxHTML = `<div class="total-pay-box">`;
-        for (let name in studentGrandTotals) payBoxHTML += `<div class="summary-item"><span>${name}:</span> <span>${studentGrandTotals[name].toFixed(2)} ETB</span></div>`;
-        sumContent.innerHTML += payBoxHTML + `</div><div class="grand-total-box"><div>TOTAL EXPENDITURE</div><div style="font-size:22px;">${absoluteTotal.toFixed(2)} ETB</div></div>`;
+        for (let name in studentGrandTotals) {
+            payBoxHTML += `<div class="summary-item">
+                <span>${name}:</span> <span>${studentGrandTotals[name].toFixed(2)} ETB</span>
+            </div>`;
+        }
+        payBoxHTML += `</div>`;
+        sumContent.innerHTML += payBoxHTML;
+
+        sumContent.innerHTML += `
+            <div class="grand-total-box">
+                <div style="font-size:12px; opacity:0.8;">ALL STUDENTS TOTAL EXPENDITURE</div>
+                <div style="font-size:22px; font-weight:bold;">${absoluteTotal.toFixed(2)} ETB</div>
+            </div>`;
     }
 
     function deleteSingleEntry(key) {
         groupRef.child('password').once('value', (snapshot) => {
             const adminPass = snapshot.val();
-            const performDelete = () => groupRef.child('history').child(key).remove();
-            if (!adminPass || groupID === "public_normal") showNotification({ title: "Delete?", msg: "Remove record?", isConfirmType: true, onConfirm: performDelete });
-            else showNotification({ title: "Confirm", msg: "Enter password:", isPassword: true, onConfirm: (p) => p === adminPass ? performDelete() : alert("Wrong pass") });
+            const performDelete = () => { groupRef.child('history').child(key).remove(); };
+
+            if (!adminPass || groupID === "public_normal") {
+                showNotification({ title: "Delete Entry", msg: "Remove this specific record?", isConfirmType: true, onConfirm: performDelete });
+            } else {
+                showNotification({
+                    title: "Confirm Deletion",
+                    msg: "Enter password to delete this entry:",
+                    isPassword: true,
+                    onConfirm: (passInput) => {
+                        if (passInput === adminPass) { performDelete(); } 
+                        else { showNotification({ title: "Denied", msg: "Incorrect Password!" }); }
+                    }
+                });
+            }
         });
     }
 
     function exportToExcel() {
-        const excelData = history.map(item => Object.assign({ date: item.date, location: item.location, meal: item.meal, total: item.total }, item.individualCosts));
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
-        XLSX.writeFile(workbook, "Meal_History_" + groupID + ".xlsx");
+        try {
+            const excelData = history.map(item => {
+                const base = {
+                    date: item.date,
+                    location: item.location,
+                    meal: item.meal,
+                    total: item.total
+                };
+                return Object.assign(base, item.individualCosts);
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
+
+            XLSX.writeFile(workbook, "Meal_History_" + groupID + ".xlsx");
+            
+            showNotification({ title: "Export Success", msg: "File downloaded to your device." });
+        } catch (e) {
+            alert("Export failed: " + e.message);
+        }
     }
 
+    // New Function: Export to PDF (Works best for APK)
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFontSize(18); doc.setTextColor(230, 126, 34); doc.text(`Meal Report: ${groupID}`, 14, 20);
+
+        doc.setFontSize(18);
+        doc.setTextColor(230, 126, 34); 
+        doc.text(`Meal Report: ${groupID}`, 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${getEthiopianDate()}`, 14, 28);
+
         doc.autoTable({
-            html: '#historyTable', startY: 35, theme: 'striped', headStyles: { fillColor: [230, 126, 34] },
-            columns: [{header:'Date',dataKey:'date'},{header:'Loc',dataKey:'loc'},{header:'Meal',dataKey:'meal'},{header:'Total',dataKey:'total'},{header:'Details',dataKey:'details'}],
-            didParseCell: (d) => { if (d.column.index === 5) d.cell.text = ''; }
+            html: '#historyTable',
+            startY: 35,
+            theme: 'striped',
+            headStyles: { fillColor: [230, 126, 34] }, 
+            columns: [
+                { header: 'Date', dataKey: 'date' },
+                { header: 'Loc', dataKey: 'loc' },
+                { header: 'Meal', dataKey: 'meal' },
+                { header: 'Total', dataKey: 'total' },
+                { header: 'Details', dataKey: 'details' }
+            ],
+            didParseCell: function(data) {
+                if (data.column.index === 5) { data.cell.text = ''; }
+            }
         });
+
         const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(14); doc.setTextColor(39, 174, 96); doc.text("Summary Totals", 14, finalY);
-        const items = document.querySelectorAll('#summaryBox .summary-item');
-        items.forEach((item, index) => doc.text(item.innerText.replace(/\n/g, ": "), 14, finalY + 8 + (index * 7)));
+        doc.setFontSize(14);
+        doc.setTextColor(39, 174, 96); 
+        doc.text("Monthly Summary Totals", 14, finalY);
+
+        doc.setFontSize(11);
+        doc.setTextColor(0);
+        
+        const summaryItems = document.querySelectorAll('#summaryBox .summary-item');
+        let offset = 8;
+        summaryItems.forEach((item, index) => {
+            const text = item.innerText.replace(/\n/g, ": ");
+            doc.text(text, 14, finalY + offset + (index * 7));
+        });
+
         doc.save(`Meal_Report_${groupID}.pdf`);
+        showNotification({ title: "PDF Created", msg: "Your report has been generated." });
     }
 
     function clearAllData() {
         groupRef.child('password').once('value', (snapshot) => {
             const adminPass = snapshot.val();
-            const clear = () => { groupRef.child('history').remove(); groupRef.child('members').remove(); location.reload(); };
-            showNotification({ title: "Confirm Clear", msg: "Password required:", isPassword: true, onConfirm: (p) => p === adminPass ? clear() : alert("Denied") });
+            if (!adminPass || groupID === "public_normal") {
+                showNotification({
+                    title: "Final Check",
+                    msg: "Are you sure? This will delete all history for this public group.",
+                    isConfirmType: true,
+                    onConfirm: () => {
+                        groupRef.child('history').remove();
+                        groupRef.child('members').remove();
+                        location.reload();
+                    }
+                });
+            } else {
+                showNotification({
+                    title: "Confirm Deletion",
+                    msg: "Enter password to clear all group data (History & Members):",
+                    isPassword: true,
+                    onConfirm: (passInput) => {
+                        if (passInput === adminPass) {
+                            showNotification({
+                                title: "Final Check",
+                                msg: "Are you sure? This cannot be undone.",
+                                isConfirmType: true,
+                                onConfirm: () => {
+                                    groupRef.child('history').remove();
+                                    groupRef.child('members').remove();
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            showNotification({ title: "Denied", msg: "Incorrect password. Data kept safe." });
+                        }
+                    }
+                });
+            }
         });
     }
     </script>
