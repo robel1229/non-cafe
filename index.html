@@ -29,9 +29,7 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 600px; background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
         h2 { color: var(--primary-orange); text-align: center; margin-top: 0; }
-h3 {text-align: center; margin-bottom : 0; 
-        
-    }
+        h3 {text-align: center; margin-bottom : 0; }
         
         .group-setup { background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #2196f3; }
         .member-setup { background: #fff3e0; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--primary-orange); }
@@ -54,7 +52,6 @@ h3 {text-align: center; margin-bottom : 0;
         .btn-pdf { background: #e74c3c; color: white; margin-top: 10px; }
         .btn-clear { background: #e74c3c; color: white; margin-top: 20px; padding: 8px 15px; width: auto; }
         
-        /* Updated: Table-only scroll styles */
         .history-section { width: 100%; max-width: 600px; margin-top: 30px; }
         .table-wrapper { 
             overflow-x: auto; 
@@ -92,8 +89,9 @@ h3 {text-align: center; margin-bottom : 0;
             display: none; align-items: center; justify-content: center; z-index: 9999;
         }
         .modal-content {
-            background: white; width: 90%; max-width: 400px; padding: 30px;
+            background: white; width: 90%; max-width: 400px; padding: 25px;
             border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); text-align: center;
+            max-height: 90vh; overflow-y: auto;
         }
         .modal-head { font-weight: 800; font-size: 1.2rem; color: var(--text-color); margin-bottom: 15px; }
         .modal-body { color: #666; line-height: 1.5; margin-bottom: 20px; font-size: 15px; }
@@ -104,17 +102,14 @@ h3 {text-align: center; margin-bottom : 0;
         .modal-input-field { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; margin-bottom: 20px; text-align: center; font-size: 16px; }
         #qrcode { display: flex; justify-content: center; margin-bottom: 20px; }
 
-        .btn-delete-row { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; }
+        .btn-action { background: none; border: none; cursor: pointer; font-size: 16px; padding: 5px; }
         footer { margin-top: 40px; padding: 20px; text-align: center; font-size: 14px; color: #7f8c8d; }
 
         #apkDownloadLink {
-            background: #fff3e0;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid var(--primary-orange);
-            text-align: center;
-            margin-bottom: 15px;
+            background: #fff3e0; padding: 15px; border-radius: 10px; border: 1px solid var(--primary-orange); text-align: center; margin-bottom: 15px;
         }
+        
+        .edit-member-item { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
 <body>
@@ -218,6 +213,22 @@ h3 {text-align: center; margin-bottom : 0;
         </div>
     </div>
 
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-head">Edit Meal Record</div>
+            <div class="input-group"><label>Date (E.C)</label><input type="text" id="editDate"></div>
+            <div class="input-group"><label>Location</label><input type="text" id="editLoc"></div>
+            <div class="input-group"><label>Meal</label><select id="editMeal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option></select></div>
+            <div class="input-group"><label>Total Price</label><input type="number" id="editTotal"></div>
+            <label>Participants:</label>
+            <div id="editMemberChecklist" style="text-align:left; margin-bottom:15px; border:1px solid #eee; padding:10px; border-radius:10px;"></div>
+            <div class="modal-footer">
+                <button class="m-btn m-cancel" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+                <button class="m-btn m-confirm" id="saveEditBtn">Update Record</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         &copy; 2026 Non-Cafe System. Created by Aman. <br>
         Built for students. Available on GitHub.
@@ -246,58 +257,39 @@ h3 {text-align: center; margin-bottom : 0;
     document.getElementById('groupInput').value = groupID;
 
     let members = [];
-    let history = [];
-    let rawHistoryKeys = [];
+    let historyEntries = []; // Changed name to avoid confusion with window.history
 
     function initPlatform() {
         const isAPK = navigator.userAgent.toLowerCase().includes("wv") || window.location.protocol === "file:";
         const browserBtn = document.getElementById('browserExportBtn');
         const apkLinkDiv = document.getElementById('apkDownloadLink');
         const chromeLink = document.getElementById('chromeLink');
-
         chromeLink.href = "https://robel1229.github.io/non-cafe/?group=" + groupID;
-
-        if (isAPK) {
-            browserBtn.style.display = 'none';
-            apkLinkDiv.style.display = 'block';
-        } else {
-            browserBtn.style.display = 'block';
-            apkLinkDiv.style.display = 'none';
-        }
+        if (isAPK) { browserBtn.style.display = 'none'; apkLinkDiv.style.display = 'block'; } 
+        else { browserBtn.style.display = 'block'; apkLinkDiv.style.display = 'none'; }
     }
 
     function setSmartMealDefault() {
         const hour = new Date().getHours(); 
         const mealSelect = document.getElementById('mealType');
-
-        if (hour >= 7 && hour < 12) {
-            mealSelect.value = "Breakfast";
-        } else if (hour >= 12 && hour < 18) {
-            mealSelect.value = "Lunch";
-        } else {
-            mealSelect.value = "Dinner";
-        }
+        if (hour >= 7 && hour < 12) mealSelect.value = "Breakfast";
+        else if (hour >= 12 && hour < 18) mealSelect.value = "Lunch";
+        else mealSelect.value = "Dinner";
     }
 
-    window.onload = function() {
-        initPlatform();
-        setSmartMealDefault();
-    };
+    window.onload = function() { initPlatform(); setSmartMealDefault(); };
 
     function showNotification({ title, msg, onConfirm = null, isConfirmType = false, isPassword = false }) {
         const modal = document.getElementById('modernModal');
         const confirmBtn = document.getElementById('modalConfirm');
         const cancelBtn = document.getElementById('modalCancel');
         const inputArea = document.getElementById('modalInputArea');
-        
         document.getElementById('qrcode').innerHTML = ""; 
         document.getElementById('modalHead').innerText = title;
         document.getElementById('modalBody').innerText = msg;
         inputArea.innerHTML = isPassword ? '<input type="password" id="modalPassInput" class="modal-input-field" placeholder="Enter password...">' : '';
-        
         modal.style.display = 'flex';
         cancelBtn.style.display = (isConfirmType || isPassword) ? 'block' : 'none';
-
         confirmBtn.onclick = () => {
             let passVal = isPassword ? document.getElementById('modalPassInput').value : null;
             closeModal();
@@ -310,28 +302,19 @@ h3 {text-align: center; margin-bottom : 0;
     function switchGroup() {
         const newGroupName = document.getElementById('groupInput').value.trim();
         if (!newGroupName) return;
-
         db.ref('groups/' + newGroupName + '/password').once('value', (snapshot) => {
             const existingPass = snapshot.val();
-            
             if (existingPass) {
                 showNotification({
-                    title: "Enter Password",
-                    msg: "This is a private group. Please enter the password to join:",
-                    isPassword: true,
+                    title: "Enter Password", msg: "Private group. Enter password:", isPassword: true,
                     onConfirm: (passInput) => {
-                        if (passInput === existingPass) {
-                            window.location.href = window.location.pathname + '?group=' + newGroupName;
-                        } else {
-                            showNotification({ title: "Access Denied", msg: "Incorrect Password!" });
-                        }
+                        if (passInput === existingPass) window.location.href = window.location.pathname + '?group=' + newGroupName;
+                        else showNotification({ title: "Access Denied", msg: "Incorrect Password!" });
                     }
                 });
             } else {
                 showNotification({
-                    title: "New Group Detected",
-                    msg: "Set a password for this new group:",
-                    isPassword: true,
+                    title: "New Group Detected", msg: "Set a password for this new group:", isPassword: true,
                     onConfirm: (newPass) => {
                         if (newPass) {
                             db.ref('groups/' + newGroupName).set({ password: newPass });
@@ -348,23 +331,29 @@ h3 {text-align: center; margin-bottom : 0;
         if (data) {
             members = data.members || [];
             const historyObj = data.history || {};
-            rawHistoryKeys = Object.keys(historyObj).reverse();
-            history = rawHistoryKeys.map(k => historyObj[k]);
-            
+            // Convert to array and sort: newest dates first
+            historyEntries = Object.keys(historyObj).map(key => ({
+                id: key,
+                ...historyObj[key]
+            })).sort((a, b) => {
+                // Sorting by Date String (DD/MM/YYYY) - logic for chronologial sort
+                const partsA = a.date.split(' ')[0].split('/');
+                const partsB = b.date.split(' ')[0].split('/');
+                const dateA = new Date(partsA[2], partsA[1]-1, partsA[0]);
+                const dateB = new Date(partsB[2], partsB[1]-1, partsB[0]);
+                return dateB - dateA;
+            });
             renderMembers();
             renderHistory();
         } else {
-            members = []; history = []; rawHistoryKeys = [];
+            members = []; historyEntries = [];
             renderMembers(); renderHistory();
         }
     });
 
     function showShareQR() {
         showNotification({ title: "Share Group", msg: "Scan to join '" + groupID + "'." });
-        new QRCode(document.getElementById('qrcode'), {
-            text: window.location.href,
-            width: 180, height: 180
-        });
+        new QRCode(document.getElementById('qrcode'), { text: window.location.href, width: 180, height: 180 });
     }
 
     function getEthiopianDate() {
@@ -400,19 +389,15 @@ h3 {text-align: center; margin-bottom : 0;
         calculate();
     }
 
-    function roundUp(num) {
-        return Math.ceil(num * 100) / 100;
-    }
+    function roundUp(num) { return Math.ceil(num * 100) / 100; }
 
     function calculate() {
         const total = parseFloat(document.getElementById('totalPrice').value) || 0;
         const checks = document.querySelectorAll('.member-check');
         let activeCount = 0;
         checks.forEach(c => { if(c.checked) activeCount++; });
-        
         const perPerson = activeCount > 0 ? (total / activeCount) : 0;
         const roundedPerPerson = roundUp(perPerson);
-        
         checks.forEach(c => {
             const name = c.getAttribute('data-name');
             const costEl = document.getElementById(`cost-${name}`);
@@ -424,23 +409,19 @@ h3 {text-align: center; margin-bottom : 0;
         const loc = document.getElementById('location').value;
         const price = parseFloat(document.getElementById('totalPrice').value);
         const checks = document.querySelectorAll('.member-check');
-        const active = Array.from(checks).filter(c => { return c.checked; });
-        
+        const active = Array.from(checks).filter(c => c.checked);
         if(!loc || !price || active.length === 0) {
             showNotification({ title: "Error", msg: "Check location, price, and selected members." });
             return;
         }
-
         const perPerson = roundUp(price / active.length);
         let detailText = [];
         let detailData = {};
-        
         active.forEach(c => {
             const name = c.getAttribute('data-name');
             detailText.push(`${name}(${perPerson.toFixed(2)})`);
             detailData[name] = perPerson;
         });
-
         const record = {
             date: getEthiopianDate(),
             location: loc,
@@ -449,28 +430,22 @@ h3 {text-align: center; margin-bottom : 0;
             details: detailText.join(', '),
             individualCosts: detailData
         };
-
         groupRef.child('history').push(record);
         document.getElementById('location').value = '';
         document.getElementById('totalPrice').value = '';
-        
-        calculate(); 
-        setSmartMealDefault();
+        calculate(); setSmartMealDefault();
         showNotification({ title: "Success", msg: "Record saved to " + groupID });
     }
 
     function renderHistory() {
         const tbody = document.querySelector('#historyTable tbody');
         tbody.innerHTML = '';
-        
         let locationGroups = {}; 
         let studentGrandTotals = {}; 
         let absoluteTotal = 0;
-
         members.forEach(m => studentGrandTotals[m] = 0);
 
-        history.forEach((item, index) => {
-            const rowKey = rawHistoryKeys[index];
+        historyEntries.forEach((item) => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${item.date}</td>
@@ -478,78 +453,126 @@ h3 {text-align: center; margin-bottom : 0;
                 <td>${item.meal}</td>
                 <td>${item.total.toFixed(2)}</td>
                 <td style="color:#2980b9;">${item.details}</td>
-                <td><button class="btn-delete-row" onclick="deleteSingleEntry('${rowKey}')">&#128465;</button></td>
+                <td>
+                    <button class="btn-action" onclick="openEditModal('${item.id}')">&#9998;</button>
+                    <button class="btn-action" onclick="deleteSingleEntry('${item.id}')">&#128465;</button>
+                </td>
             `;
             tbody.appendChild(row);
-            
             absoluteTotal += (item.total || 0);
-
             const locKey = item.location.trim() || "Unknown";
             if(!locationGroups[locKey]) locationGroups[locKey] = { students: {}, locTotal: 0 };
-
             for (let name in item.individualCosts) {
                 const cost = item.individualCosts[name];
                 locationGroups[locKey].students[name] = (locationGroups[locKey].students[name] || 0) + cost;
                 locationGroups[locKey].locTotal += cost;
-                if (studentGrandTotals.hasOwnProperty(name)) {
-                    studentGrandTotals[name] += cost;
-                }
+                if (studentGrandTotals.hasOwnProperty(name)) studentGrandTotals[name] += cost;
             }
         });
 
         const sumContent = document.getElementById('summaryContent');
-        sumContent.innerHTML = '';
-
-        sumContent.innerHTML += `<div style="font-weight:bold; color:var(--primary-orange); margin:10px 0 5px 0; font-size:14px;">&#128205; Breakdown by Location</div>`;
+        sumContent.innerHTML = `<div style="font-weight:bold; color:var(--primary-orange); margin:10px 0 5px 0; font-size:14px;">&#128205; Breakdown by Location</div>`;
         for (let loc in locationGroups) {
-            let locHTML = `<div class="location-group">
-                <div class="location-header"><span>${loc}</span> <small>Details</small></div>`;
+            let locHTML = `<div class="location-group"><div class="location-header"><span>${loc}</span> <small>Details</small></div>`;
             for (let person in locationGroups[loc].students) {
-                locHTML += `<div class="summary-item" style="font-weight:normal; font-size:13px;">
-                    <span>${person}:</span> <span>${locationGroups[loc].students[person].toFixed(2)} ETB</span>
-                </div>`;
+                locHTML += `<div class="summary-item" style="font-weight:normal; font-size:13px;"><span>${person}:</span> <span>${locationGroups[loc].students[person].toFixed(2)} ETB</span></div>`;
             }
-            locHTML += `<div class="location-footer">
-                <div class="summary-item">
-                    <span>Total (this place):</span> <span>${locationGroups[loc].locTotal.toFixed(2)} ETB</span>
-                </div>
-            </div>`;
-            locHTML += `</div>`;
+            locHTML += `<div class="location-footer"><div class="summary-item"><span>Total (this place):</span> <span>${locationGroups[loc].locTotal.toFixed(2)} ETB</span></div></div></div>`;
             sumContent.innerHTML += locHTML;
         }
-
         sumContent.innerHTML += `<div style="font-weight:bold; color:#2196f3; margin:20px 0 5px 0; font-size:14px;">&#128179; Individual Totals (Grand Total to Pay)</div>`;
         let payBoxHTML = `<div class="total-pay-box">`;
         for (let name in studentGrandTotals) {
-            payBoxHTML += `<div class="summary-item">
-                <span>${name}:</span> <span>${studentGrandTotals[name].toFixed(2)} ETB</span>
-            </div>`;
+            payBoxHTML += `<div class="summary-item"><span>${name}:</span> <span>${studentGrandTotals[name].toFixed(2)} ETB</span></div>`;
         }
         payBoxHTML += `</div>`;
         sumContent.innerHTML += payBoxHTML;
+        sumContent.innerHTML += `<div class="grand-total-box"><div style="font-size:12px; opacity:0.8;">ALL STUDENTS TOTAL EXPENDITURE</div><div style="font-size:22px; font-weight:bold;">${absoluteTotal.toFixed(2)} ETB</div></div>`;
+    }
 
-        sumContent.innerHTML += `
-            <div class="grand-total-box">
-                <div style="font-size:12px; opacity:0.8;">ALL STUDENTS TOTAL EXPENDITURE</div>
-                <div style="font-size:22px; font-weight:bold;">${absoluteTotal.toFixed(2)} ETB</div>
-            </div>`;
+    // --- EDIT LOGIC ---
+    function openEditModal(key) {
+        const record = historyEntries.find(e => e.id === key);
+        if(!record) return;
+
+        document.getElementById('editDate').value = record.date;
+        document.getElementById('editLoc').value = record.location;
+        document.getElementById('editMeal').value = record.meal;
+        document.getElementById('editTotal').value = record.total;
+
+        const checkList = document.getElementById('editMemberChecklist');
+        checkList.innerHTML = '';
+        members.forEach(m => {
+            const isChecked = record.individualCosts.hasOwnProperty(m);
+            checkList.innerHTML += `
+                <div class="edit-member-item">
+                    <span>${m}</span>
+                    <input type="checkbox" class="edit-m-check" data-name="${m}" ${isChecked ? 'checked' : ''}>
+                </div>`;
+        });
+
+        document.getElementById('editModal').style.display = 'flex';
+        document.getElementById('saveEditBtn').onclick = () => {
+            groupRef.child('password').once('value', (snap) => {
+                const pass = snap.val();
+                if(!pass || groupID === "public_normal") performUpdate(key);
+                else {
+                    showNotification({
+                        title: "Admin Required", msg: "Enter password to update record:", isPassword: true,
+                        onConfirm: (input) => {
+                            if(input === pass) performUpdate(key);
+                            else showNotification({ title: "Denied", msg: "Incorrect Password" });
+                        }
+                    });
+                }
+            });
+        };
+    }
+
+    function performUpdate(key) {
+        const date = document.getElementById('editDate').value;
+        const loc = document.getElementById('editLoc').value;
+        const meal = document.getElementById('editMeal').value;
+        const total = parseFloat(document.getElementById('editTotal').value) || 0;
+        const checks = document.querySelectorAll('.edit-m-check');
+        const active = Array.from(checks).filter(c => c.checked);
+
+        if(!loc || total <= 0 || active.length === 0) {
+            alert("Please provide valid location, price, and at least one member.");
+            return;
+        }
+
+        const perPerson = roundUp(total / active.length);
+        let detailText = [];
+        let detailData = {};
+        active.forEach(c => {
+            const name = c.getAttribute('data-name');
+            detailText.push(`${name}(${perPerson.toFixed(2)})`);
+            detailData[name] = perPerson;
+        });
+
+        const updatedRecord = {
+            date: date, location: loc, meal: meal, total: total,
+            details: detailText.join(', '), individualCosts: detailData
+        };
+
+        groupRef.child('history').child(key).update(updatedRecord);
+        document.getElementById('editModal').style.display = 'none';
+        showNotification({ title: "Updated", msg: "Record has been updated and re-sorted." });
     }
 
     function deleteSingleEntry(key) {
         groupRef.child('password').once('value', (snapshot) => {
             const adminPass = snapshot.val();
             const performDelete = () => { groupRef.child('history').child(key).remove(); };
-
             if (!adminPass || groupID === "public_normal") {
                 showNotification({ title: "Delete Entry", msg: "Remove this specific record?", isConfirmType: true, onConfirm: performDelete });
             } else {
                 showNotification({
-                    title: "Confirm Deletion",
-                    msg: "Enter password to delete this entry:",
-                    isPassword: true,
+                    title: "Confirm Deletion", msg: "Enter password to delete:", isPassword: true,
                     onConfirm: (passInput) => {
-                        if (passInput === adminPass) { performDelete(); } 
-                        else { showNotification({ title: "Denied", msg: "Incorrect Password!" }); }
+                        if (passInput === adminPass) performDelete();
+                        else showNotification({ title: "Denied", msg: "Incorrect Password!" });
                     }
                 });
             }
@@ -558,111 +581,56 @@ h3 {text-align: center; margin-bottom : 0;
 
     function exportToExcel() {
         try {
-            const excelData = history.map(item => {
-                const base = {
-                    date: item.date,
-                    location: item.location,
-                    meal: item.meal,
-                    total: item.total
-                };
+            const excelData = historyEntries.map(item => {
+                const base = { date: item.date, location: item.location, meal: item.meal, total: item.total };
                 return Object.assign(base, item.individualCosts);
             });
-
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Meal History");
-
             XLSX.writeFile(workbook, "Meal_History_" + groupID + ".xlsx");
-            
-            showNotification({ title: "Export Success", msg: "File downloaded to your device." });
-        } catch (e) {
-            alert("Export failed: " + e.message);
-        }
+            showNotification({ title: "Export Success", msg: "File downloaded." });
+        } catch (e) { alert("Export failed: " + e.message); }
     }
 
-    // New Function: Export to PDF (Works best for APK)
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
-        doc.setFontSize(18);
-        doc.setTextColor(230, 126, 34); 
-        doc.text(`Meal Report: ${groupID}`, 14, 20);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Generated on: ${getEthiopianDate()}`, 14, 28);
-
+        doc.setFontSize(18); doc.setTextColor(230, 126, 34); doc.text(`Meal Report: ${groupID}`, 14, 20);
+        doc.setFontSize(10); doc.setTextColor(100); doc.text(`Generated on: ${getEthiopianDate()}`, 14, 28);
         doc.autoTable({
-            html: '#historyTable',
-            startY: 35,
-            theme: 'striped',
-            headStyles: { fillColor: [230, 126, 34] }, 
-            columns: [
-                { header: 'Date', dataKey: 'date' },
-                { header: 'Loc', dataKey: 'loc' },
-                { header: 'Meal', dataKey: 'meal' },
-                { header: 'Total', dataKey: 'total' },
-                { header: 'Details', dataKey: 'details' }
-            ],
-            didParseCell: function(data) {
-                if (data.column.index === 5) { data.cell.text = ''; }
-            }
+            html: '#historyTable', startY: 35, theme: 'striped', headStyles: { fillColor: [230, 126, 34] },
+            columns: [ {header:'Date',dataKey:'date'}, {header:'Loc',dataKey:'loc'}, {header:'Meal',dataKey:'meal'}, {header:'Total',dataKey:'total'}, {header:'Details',dataKey:'details'} ],
+            didParseCell: function(data) { if (data.column.index === 5) data.cell.text = ''; }
         });
-
         const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(14);
-        doc.setTextColor(39, 174, 96); 
-        doc.text("Monthly Summary Totals", 14, finalY);
-
-        doc.setFontSize(11);
-        doc.setTextColor(0);
-        
+        doc.setFontSize(14); doc.setTextColor(39, 174, 96); doc.text("Summary Totals", 14, finalY);
+        doc.setFontSize(11); doc.setTextColor(0);
         const summaryItems = document.querySelectorAll('#summaryBox .summary-item');
-        let offset = 8;
         summaryItems.forEach((item, index) => {
             const text = item.innerText.replace(/\n/g, ": ");
-            doc.text(text, 14, finalY + offset + (index * 7));
+            doc.text(text, 14, finalY + 8 + (index * 7));
         });
-
         doc.save(`Meal_Report_${groupID}.pdf`);
-        showNotification({ title: "PDF Created", msg: "Your report has been generated." });
+        showNotification({ title: "PDF Created", msg: "Report generated." });
     }
 
     function clearAllData() {
         groupRef.child('password').once('value', (snapshot) => {
             const adminPass = snapshot.val();
-            if (!adminPass || groupID === "public_normal") {
+            const performClear = () => {
                 showNotification({
-                    title: "Final Check",
-                    msg: "Are you sure? This will delete all history for this public group.",
-                    isConfirmType: true,
-                    onConfirm: () => {
-                        groupRef.child('history').remove();
-                        groupRef.child('members').remove();
-                        location.reload();
-                    }
+                    title: "Final Check", msg: "Are you sure? This cannot be undone.", isConfirmType: true,
+                    onConfirm: () => { groupRef.child('history').remove(); groupRef.child('members').remove(); location.reload(); }
                 });
-            } else {
+            };
+            if (!adminPass || groupID === "public_normal") performClear();
+            else {
                 showNotification({
-                    title: "Confirm Deletion",
-                    msg: "Enter password to clear all group data (History & Members):",
-                    isPassword: true,
+                    title: "Confirm Deletion", msg: "Enter password to clear group data:", isPassword: true,
                     onConfirm: (passInput) => {
-                        if (passInput === adminPass) {
-                            showNotification({
-                                title: "Final Check",
-                                msg: "Are you sure? This cannot be undone.",
-                                isConfirmType: true,
-                                onConfirm: () => {
-                                    groupRef.child('history').remove();
-                                    groupRef.child('members').remove();
-                                    location.reload();
-                                }
-                            });
-                        } else {
-                            showNotification({ title: "Denied", msg: "Incorrect password. Data kept safe." });
-                        }
+                        if (passInput === adminPass) performClear();
+                        else showNotification({ title: "Denied", msg: "Incorrect password." });
                     }
                 });
             }
