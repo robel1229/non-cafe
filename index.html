@@ -86,13 +86,17 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
-            display: none; align-items: center; justify-content: center; z-index: 9999;
+            display: none; align-items: center; justify-content: center; z-index: 10001; /* High Z-Index for popups */
         }
         .modal-content {
             background: white; width: 90%; max-width: 400px; padding: 25px;
             border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); text-align: center;
             max-height: 90vh; overflow-y: auto;
         }
+        
+        /* Edit Modal specific override */
+        #editModal { z-index: 10000; } 
+
         .modal-head { font-weight: 800; font-size: 1.2rem; color: var(--text-color); margin-bottom: 15px; }
         .modal-body { color: #666; line-height: 1.5; margin-bottom: 20px; font-size: 15px; }
         .modal-footer { display: flex; gap: 10px; }
@@ -257,7 +261,7 @@
     document.getElementById('groupInput').value = groupID;
 
     let members = [];
-    let historyEntries = []; // Changed name to avoid confusion with window.history
+    let historyEntries = [];
 
     function initPlatform() {
         const isAPK = navigator.userAgent.toLowerCase().includes("wv") || window.location.protocol === "file:";
@@ -331,12 +335,10 @@
         if (data) {
             members = data.members || [];
             const historyObj = data.history || {};
-            // Convert to array and sort: newest dates first
             historyEntries = Object.keys(historyObj).map(key => ({
                 id: key,
                 ...historyObj[key]
             })).sort((a, b) => {
-                // Sorting by Date String (DD/MM/YYYY) - logic for chronologial sort
                 const partsA = a.date.split(' ')[0].split('/');
                 const partsB = b.date.split(' ')[0].split('/');
                 const dateA = new Date(partsA[2], partsA[1]-1, partsA[0]);
@@ -490,7 +492,7 @@
         sumContent.innerHTML += `<div class="grand-total-box"><div style="font-size:12px; opacity:0.8;">ALL STUDENTS TOTAL EXPENDITURE</div><div style="font-size:22px; font-weight:bold;">${absoluteTotal.toFixed(2)} ETB</div></div>`;
     }
 
-    // --- EDIT LOGIC ---
+    // --- FIXED EDIT LOGIC ---
     function openEditModal(key) {
         const record = historyEntries.find(e => e.id === key);
         if(!record) return;
@@ -515,13 +517,21 @@
         document.getElementById('saveEditBtn').onclick = () => {
             groupRef.child('password').once('value', (snap) => {
                 const pass = snap.val();
-                if(!pass || groupID === "public_normal") performUpdate(key);
-                else {
+                if(!pass || groupID === "public_normal") {
+                    performUpdate(key);
+                } else {
+                    // Hide edit modal first to reveal password modal
+                    document.getElementById('editModal').style.display = 'none';
                     showNotification({
-                        title: "Admin Required", msg: "Enter password to update record:", isPassword: true,
+                        title: "Admin Required", 
+                        msg: "Enter password to update record:", 
+                        isPassword: true,
                         onConfirm: (input) => {
-                            if(input === pass) performUpdate(key);
-                            else showNotification({ title: "Denied", msg: "Incorrect Password" });
+                            if(input === pass) {
+                                performUpdate(key);
+                            } else {
+                                showNotification({ title: "Denied", msg: "Incorrect Password" });
+                            }
                         }
                     });
                 }
@@ -538,7 +548,7 @@
         const active = Array.from(checks).filter(c => c.checked);
 
         if(!loc || total <= 0 || active.length === 0) {
-            alert("Please provide valid location, price, and at least one member.");
+            alert("Valid details required.");
             return;
         }
 
@@ -558,7 +568,7 @@
 
         groupRef.child('history').child(key).update(updatedRecord);
         document.getElementById('editModal').style.display = 'none';
-        showNotification({ title: "Updated", msg: "Record has been updated and re-sorted." });
+        showNotification({ title: "Updated", msg: "Record updated successfully." });
     }
 
     function deleteSingleEntry(key) {
@@ -566,10 +576,10 @@
             const adminPass = snapshot.val();
             const performDelete = () => { groupRef.child('history').child(key).remove(); };
             if (!adminPass || groupID === "public_normal") {
-                showNotification({ title: "Delete Entry", msg: "Remove this specific record?", isConfirmType: true, onConfirm: performDelete });
+                showNotification({ title: "Delete", msg: "Remove this record?", isConfirmType: true, onConfirm: performDelete });
             } else {
                 showNotification({
-                    title: "Confirm Deletion", msg: "Enter password to delete:", isPassword: true,
+                    title: "Confirm", msg: "Enter password to delete:", isPassword: true,
                     onConfirm: (passInput) => {
                         if (passInput === adminPass) performDelete();
                         else showNotification({ title: "Denied", msg: "Incorrect Password!" });
@@ -620,14 +630,14 @@
             const adminPass = snapshot.val();
             const performClear = () => {
                 showNotification({
-                    title: "Final Check", msg: "Are you sure? This cannot be undone.", isConfirmType: true,
+                    title: "Final Check", msg: "Clear all history?", isConfirmType: true,
                     onConfirm: () => { groupRef.child('history').remove(); groupRef.child('members').remove(); location.reload(); }
                 });
             };
             if (!adminPass || groupID === "public_normal") performClear();
             else {
                 showNotification({
-                    title: "Confirm Deletion", msg: "Enter password to clear group data:", isPassword: true,
+                    title: "Confirm", msg: "Enter password to clear data:", isPassword: true,
                     onConfirm: (passInput) => {
                         if (passInput === adminPass) performClear();
                         else showNotification({ title: "Denied", msg: "Incorrect password." });
