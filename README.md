@@ -28,7 +28,6 @@ A high-performance, mobile-first web application engineered specifically for Eth
 ### 📊 Data Portability
 * **Excel Export (.xlsx):** Generate professional spreadsheets for offline record-keeping.
 * **PDF Reports:** Download formatted summary reports for easy sharing via Telegram or WhatsApp.
-* **Offline Persistence:** Uses `LocalStorage` alongside Firebase to ensure data remains accessible even with spotty campus Wi-Fi.
 
 ---
 
@@ -57,7 +56,7 @@ A high-performance, mobile-first web application engineered specifically for Eth
 
 ## 👨‍💻 Author
 
-**Aman** *Electrical and Computer Engineering Student @ DTU*
+**Aychew M** *Electrical and Computer Engineering @ DTU*
 
 Developed with ❤️ for the Ethiopian Student Community. © 2026
 
