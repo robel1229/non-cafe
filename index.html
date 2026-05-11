@@ -849,31 +849,44 @@
     /* ─── ETHIOPIAN DATE LOGIC ─── */
     function getEthiopianDate() {
     const now = new Date();
-    const timestamp = now.getTime();
     
-    // Ethiopian Calendar Conversion Logic
-    const ethiopianEpoch = -1595215680000;
-    const dayMillis = 24 * 60 * 60 * 1000;
+    // 1. Get the Gregorian date components
+    let gDay = now.getDate();
+    let gMonth = now.getMonth() + 1;
+    let gYear = now.getFullYear();
+
+    // 2. Ethiopian calendar constants
+    let eYear = gYear - 8;
+    let eMonth, eDay;
+
+    // Offset calculation: The start of the Ethiopian year (Meskerem 1) 
+    // usually falls on Sept 11 (or Sept 12 in leap years)
+    const isGregorianLeap = (gYear % 4 === 0 && gYear % 100 !== 0) || (gYear % 400 === 0);
     
-    // Total days since epoch
-    const totalDays = Math.floor((timestamp - ethiopianEpoch) / dayMillis);
-    
-    // Calculate Year
-    let year = Math.floor((4 * totalDays + 3) / 1461);
-    let remainingDays = totalDays - Math.floor((1461 * year - 3) / 4);
-    
-    // Calculate Month
-    let month = Math.floor((remainingDays) / 30) + 1;
-    let day = (remainingDays % 30) + 1;
-    
-    // Adjust for Pagume (13th month)
-    if (month > 13) {
-        month = 13;
-        day = remainingDays - 360 + 1;
+    // Find the day of the year in Gregorian
+    const daysInMonth = [0, 31, isGregorianLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let gDayOfYear = 0;
+    for (let i = 1; i < gMonth; i++) gDayOfYear += daysInMonth[i];
+    gDayOfYear += gDay;
+
+    // The start of Ethiopian Year (Meskerem 1) is Gregorian day 254 (or 255)
+    let newYearDay = ((gYear + 1) % 4 === 0) ? 255 : 254;
+
+    if (gDayOfYear >= newYearDay) {
+        eYear = gYear - 7;
+        let diff = gDayOfYear - newYearDay;
+        eMonth = Math.floor(diff / 30) + 1;
+        eDay = (diff % 30) + 1;
+    } else {
+        eYear = gYear - 8;
+        let diff = gDayOfYear + (isGregorianLeap ? 366 : 365) - newYearDay;
+        eMonth = Math.floor(diff / 30) + 1;
+        eDay = (diff % 30) + 1;
     }
 
-    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    return `${String(eDay).padStart(2, '0')}/${String(eMonth).padStart(2, '0')}/${eYear}`;
 }
+
 
     /* ─── SAVE ─── */
     function saveToHistory() {
