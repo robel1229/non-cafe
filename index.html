@@ -846,14 +846,34 @@
         });
     }
 
-    /* ─── FIXED ETHIOPIAN DATE LOGIC ─── */
+    /* ─── ETHIOPIAN DATE LOGIC ─── */
     function getEthiopianDate() {
-        const now = new Date();
-        // Adjusting milliseconds to align properly with current Ethiopian Day (08/08/2018)
-        // 2808 days is standard for early-mid year offset
-        const ec = new Date(now.getTime() - (2808 * 24 * 60 * 60 * 1000));
-        return `${String(ec.getDate()).padStart(2,'0')}/${String(ec.getMonth()+1).padStart(2,'0')}/${ec.getFullYear()}`;
+    const now = new Date();
+    const timestamp = now.getTime();
+    
+    // Ethiopian Calendar Conversion Logic
+    const ethiopianEpoch = -1595215680000;
+    const dayMillis = 24 * 60 * 60 * 1000;
+    
+    // Total days since epoch
+    const totalDays = Math.floor((timestamp - ethiopianEpoch) / dayMillis);
+    
+    // Calculate Year
+    let year = Math.floor((4 * totalDays + 3) / 1461);
+    let remainingDays = totalDays - Math.floor((1461 * year - 3) / 4);
+    
+    // Calculate Month
+    let month = Math.floor((remainingDays) / 30) + 1;
+    let day = (remainingDays % 30) + 1;
+    
+    // Adjust for Pagume (13th month)
+    if (month > 13) {
+        month = 13;
+        day = remainingDays - 360 + 1;
     }
+
+    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+}
 
     /* ─── SAVE ─── */
     function saveToHistory() {
