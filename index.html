@@ -50,7 +50,6 @@
             overflow-x: hidden;
         }
 
-        /* Background mesh */
         body::before {
             content: '';
             position: fixed;
@@ -75,7 +74,6 @@
             padding: 20px 16px 60px;
         }
 
-        /* ── HEADER ── */
         .app-header {
             text-align: center;
             padding: 40px 0 30px;
@@ -106,7 +104,6 @@
             font-weight: 400;
         }
 
-        /* ── CARDS ── */
         .card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -129,7 +126,6 @@
         }
         .card-label span { font-size: 16px; }
 
-        /* ── INPUTS ── */
         .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
         .input-row:last-child { margin-bottom: 0; }
 
@@ -156,7 +152,6 @@
         select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b80' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
         input::placeholder { color: var(--text-muted); }
 
-        /* ── BUTTONS ── */
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             padding: 12px 20px;
@@ -197,7 +192,6 @@
         .btn-full { width: 100%; }
         .btn-sm { padding: 8px 14px; font-size: 12px; }
 
-        /* ── GROUP JOIN BAR ── */
         .group-bar {
             background: var(--card);
             border: 1px solid var(--border-accent);
@@ -218,7 +212,6 @@
             display: inline-block;
         }
 
-        /* ── MEMBER BADGES ── */
         .member-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
         .member-badge {
             background: var(--bg3);
@@ -229,7 +222,6 @@
             font-weight: 500;
         }
 
-        /* ── STUDENT GRID ── */
         .student-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -256,33 +248,21 @@
         .student-card .s-cost.zero { color: var(--text-muted); }
         .student-card .s-check { display: none; }
 
-        /* ── SECTION DIVIDER ── */
-    .section-title {
-    font-size: 11px; 
-    font-weight: 700; 
-    letter-spacing: 0.12em;
-    text-transform: uppercase; 
-    color: var(--text-muted);
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    gap: 15px;
-    margin: 24px 0 14px;
-}
-.section-title::before { 
-    content: ''; 
-    flex: 1; 
-    height: 1px; 
-    background: var(--border); 
-}
-.section-title::after { 
-    content: ''; 
-    flex: 1; 
-    height: 1px; 
-    background: var(--border); 
-}
+        .section-title {
+            font-size: 11px; 
+            font-weight: 700; 
+            letter-spacing: 0.12em;
+            text-transform: uppercase; 
+            color: var(--text-muted);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 15px;
+            margin: 24px 0 14px;
+        }
+        .section-title::before { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        /* ── ACTION BUTTONS ROW ── */
         .actions-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -290,7 +270,6 @@
             margin-bottom: 14px;
         }
 
-        /* ── TABLE ── */
         .table-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -337,7 +316,6 @@
         .btn-action:hover { background: var(--bg3); color: var(--text); }
         .btn-action.del:hover { color: var(--red); }
 
-        /* ── SUMMARY ── */
         .summary-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -352,6 +330,7 @@
             border-bottom: 1px solid var(--border);
         }
 
+        /* ── LOCATION BLOCK — updated to support header row with delete button ── */
         .loc-block {
             background: var(--bg3);
             border: 1px solid var(--border);
@@ -360,7 +339,41 @@
             padding: 14px;
             margin-bottom: 10px;
         }
-        .loc-block-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+        .loc-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .loc-block-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        /* Delete-location button */
+        .btn-del-loc {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
+            color: var(--red);
+            font-family: 'Sora', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            white-space: nowrap;
+        }
+        .btn-del-loc:hover {
+            background: rgba(239,68,68,0.2);
+            border-color: rgba(239,68,68,0.5);
+            transform: scale(0.97);
+        }
+        .btn-del-loc:active { transform: scale(0.94); }
+
         .loc-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
         .loc-total { border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px; color: var(--green); font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; }
 
@@ -388,7 +401,6 @@
         .grand-total-block .gt-amount { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
         .grand-total-block .gt-sub { font-size: 12px; opacity: 0.7; margin-top: 4px; }
 
-        /* ── MODAL ── */
         .modal-overlay {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.75);
@@ -410,7 +422,6 @@
             flex-direction: column;
             align-items: center;
         }
-        
         @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
         .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; text-align: center; width: 100%;}
         .modal-msg { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.6; text-align: center; width: 100%;}
@@ -437,7 +448,6 @@
             width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
         }
 
-        /* ── FOOTER ── */
         footer {
             text-align: center;
             padding: 30px 20px;
@@ -447,7 +457,6 @@
         }
         footer a { color: var(--accent); text-decoration: none; }
 
-        /* ── EMPTY STATE ── */
         .empty-state {
             padding: 40px 20px;
             text-align: center;
@@ -456,7 +465,6 @@
         .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
         .empty-state p { font-size: 13px; }
 
-        /* ── TOAST ── */
         .toast {
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
             background: var(--card2); border: 1px solid var(--border);
@@ -473,7 +481,6 @@
         .toast.error { border-color: var(--red); color: var(--red); }
         .toast.info { border-color: var(--accent); color: var(--accent); }
 
-        /* APK warning */
         .apk-note {
             background: rgba(249,115,22,0.06);
             border: 1px dashed var(--border-accent);
@@ -690,25 +697,15 @@
     function setSmartMealDefault() {
         const now = new Date();
         const hr = now.getHours();
-        
-        // Convert Gregorian Hour to Ethiopian Hour (Roughly)
-        // Ethiopian 12:00 morning = 6:00 AM Gregorian
         let ethHour;
         if (hr >= 6) { ethHour = hr - 6; }
-        else { ethHour = hr + 18; } 
-
+        else { ethHour = hr + 18; }
         const s = document.getElementById('mealType');
-        
-        // Morning 12:00 - 5:00 = Breakfast
         if (ethHour >= 0 && ethHour < 5) {
             s.value = "Breakfast";
-        } 
-        // 6:00 - 10:00 = Lunch
-        else if (ethHour >= 6 && ethHour <= 10) {
+        } else if (ethHour >= 6 && ethHour <= 10) {
             s.value = "Lunch";
-        }
-        // Afternoon/Night 10:00 - 3:00 = Dinner
-        else {
+        } else {
             s.value = "Dinner";
         }
     }
@@ -796,12 +793,10 @@
         const badges = document.getElementById('memberBadges');
         grid.innerHTML = ''; badges.innerHTML = '';
         members.forEach(name => {
-            // Badge
             const b = document.createElement('span');
             b.className = 'member-badge';
             b.textContent = name;
             badges.appendChild(b);
-            // Card
             const card = document.createElement('div');
             card.className = 'student-card active';
             card.dataset.name = name;
@@ -849,45 +844,31 @@
 
     /* ─── ETHIOPIAN DATE LOGIC ─── */
     function getEthiopianDate() {
-    const now = new Date();
-    
-    // 1. Get the Gregorian date components
-    let gDay = now.getDate();
-    let gMonth = now.getMonth() + 1;
-    let gYear = now.getFullYear();
-
-    // 2. Ethiopian calendar constants
-    let eYear = gYear - 8;
-    let eMonth, eDay;
-
-    // Offset calculation: The start of the Ethiopian year (Meskerem 1) 
-    // usually falls on Sept 11 (or Sept 12 in leap years)
-    const isGregorianLeap = (gYear % 4 === 0 && gYear % 100 !== 0) || (gYear % 400 === 0);
-    
-    // Find the day of the year in Gregorian
-    const daysInMonth = [0, 31, isGregorianLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let gDayOfYear = 0;
-    for (let i = 1; i < gMonth; i++) gDayOfYear += daysInMonth[i];
-    gDayOfYear += gDay;
-
-    // The start of Ethiopian Year (Meskerem 1) is Gregorian day 254 (or 255)
-    let newYearDay = ((gYear + 1) % 4 === 0) ? 255 : 254;
-
-    if (gDayOfYear >= newYearDay) {
-        eYear = gYear - 7;
-        let diff = gDayOfYear - newYearDay;
-        eMonth = Math.floor(diff / 30) + 1;
-        eDay = (diff % 30) + 1;
-    } else {
-        eYear = gYear - 8;
-        let diff = gDayOfYear + (isGregorianLeap ? 366 : 365) - newYearDay;
-        eMonth = Math.floor(diff / 30) + 1;
-        eDay = (diff % 30) + 1;
+        const now = new Date();
+        let gDay = now.getDate();
+        let gMonth = now.getMonth() + 1;
+        let gYear = now.getFullYear();
+        let eYear = gYear - 8;
+        let eMonth, eDay;
+        const isGregorianLeap = (gYear % 4 === 0 && gYear % 100 !== 0) || (gYear % 400 === 0);
+        const daysInMonth = [0, 31, isGregorianLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let gDayOfYear = 0;
+        for (let i = 1; i < gMonth; i++) gDayOfYear += daysInMonth[i];
+        gDayOfYear += gDay;
+        let newYearDay = ((gYear + 1) % 4 === 0) ? 255 : 254;
+        if (gDayOfYear >= newYearDay) {
+            eYear = gYear - 7;
+            let diff = gDayOfYear - newYearDay;
+            eMonth = Math.floor(diff / 30) + 1;
+            eDay = (diff % 30) + 1;
+        } else {
+            eYear = gYear - 8;
+            let diff = gDayOfYear + (isGregorianLeap ? 366 : 365) - newYearDay;
+            eMonth = Math.floor(diff / 30) + 1;
+            eDay = (diff % 30) + 1;
+        }
+        return `${String(eDay).padStart(2, '0')}/${String(eMonth).padStart(2, '0')}/${eYear}`;
     }
-
-    return `${String(eDay).padStart(2, '0')}/${String(eMonth).padStart(2, '0')}/${eYear}`;
-}
-
 
     /* ─── SAVE ─── */
     function saveToHistory() {
@@ -961,8 +942,19 @@
         }
 
         let html = '<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">📍 By Location</div>';
+
         for (let loc in locationGroups) {
-            html += `<div class="loc-block"><div class="loc-block-name">${loc}</div>`;
+            // Escape the location name for safe use in onclick attribute
+            const locEscaped = loc.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const count = historyEntries.filter(e => (e.location.trim() || "Unknown") === loc).length;
+
+            html += `<div class="loc-block">
+                <div class="loc-block-header">
+                    <div class="loc-block-name">📍 ${loc}</div>
+                    <button class="btn-del-loc" onclick="deleteByLocation('${locEscaped}')" title="Delete all ${loc} records">
+                        🗑 Delete (${count})
+                    </button>
+                </div>`;
             for (let p in locationGroups[loc].students)
                 html += `<div class="loc-row"><span>${p}</span><span style="font-family:'JetBrains Mono',monospace">${locationGroups[loc].students[p].toFixed(2)} ETB</span></div>`;
             html += `<div class="loc-total"><span>Total</span><span>${locationGroups[loc].locTotal.toFixed(2)} ETB</span></div></div>`;
@@ -980,6 +972,51 @@
         </div>`;
 
         sum.innerHTML = html;
+    }
+
+    /* ─── DELETE BY LOCATION ─── */
+    function deleteByLocation(locationName) {
+        // Find all entry IDs that match this location
+        const matchingIds = historyEntries
+            .filter(e => (e.location.trim() || "Unknown") === locationName)
+            .map(e => e.id);
+
+        if (matchingIds.length === 0) {
+            showToast('No records found for ' + locationName, 'error');
+            return;
+        }
+
+        const performDelete = () => {
+            const updates = {};
+            matchingIds.forEach(id => { updates['history/' + id] = null; });
+            groupRef.update(updates).then(() => {
+                showToast(`Deleted ${matchingIds.length} record(s) for "${locationName}"`, 'success');
+            }).catch(err => {
+                showToast('Delete failed: ' + err.message, 'error');
+            });
+        };
+
+        groupRef.child('password').once('value', (snap) => {
+            const adminPass = snap.val();
+            if (!adminPass || groupID === "public_normal") {
+                showNotification({
+                    title: "Delete Location",
+                    msg: `Remove all ${matchingIds.length} record(s) for "${locationName}"? This cannot be undone.`,
+                    isConfirmType: true,
+                    onConfirm: performDelete
+                });
+            } else {
+                showNotification({
+                    title: "Admin Required",
+                    msg: `Enter password to delete all "${locationName}" records (${matchingIds.length} entries):`,
+                    isPassword: true,
+                    onConfirm: (p) => {
+                        if (p === adminPass) performDelete();
+                        else showNotification({ title: "Denied", msg: "Incorrect password." });
+                    }
+                });
+            }
+        });
     }
 
     /* ─── QR ─── */
@@ -1037,7 +1074,7 @@
         showToast('Record updated.', 'success');
     }
 
-    /* ─── DELETE ─── */
+    /* ─── DELETE SINGLE ─── */
     function deleteSingleEntry(key) {
         groupRef.child('password').once('value', (snap) => {
             const adminPass = snap.val();
@@ -1087,7 +1124,7 @@
         showToast('PDF exported.', 'success');
     }
 
-    /* ─── CLEAR ─── */
+    /* ─── CLEAR ALL ─── */
     function clearAllData() {
         groupRef.child('password').once('value', (snap) => {
             const adminPass = snap.val();
@@ -1108,4 +1145,4 @@
     }
 </script>
 </body>
-<html>
+</html>
